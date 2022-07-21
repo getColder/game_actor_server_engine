@@ -23,50 +23,20 @@ void Network::Dispose()
 }
 
 
-#ifndef WIN32
-#define SetsockOptType void *
-#else
 #define SetsockOptType const char *
-#endif
 
 void Network::SetSocketOpt(SOCKET socket)
 {
-    // 1.¶Ë¿Ú¹Ø±ÕºóÂíÉÏÖØĞÂÆôÓÃ
+    // 1.å¤ç”¨ç«¯å£ï¼ŒTIMEW_WAITåé©¬ä¸Šé‡æ–°å¯ç”¨
     bool isReuseaddr = true;
     setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (SetsockOptType)&isReuseaddr, sizeof(isReuseaddr));
 
-    // 2.·¢ËÍ¡¢½ÓÊÕtimeout
-    int netTimeout = 3000; // 1000 = 1Ãë
+    // 2.å‘é€ã€æ¥æ”¶timeout
+    int netTimeout = 3000; // 1000 = 1ç§’
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (SetsockOptType)&netTimeout, sizeof(netTimeout));
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (SetsockOptType)&netTimeout, sizeof(netTimeout));
 
-#ifndef WIN32
-
-    int keepAlive = 1;
-    socklen_t optlen = sizeof(keepAlive);
-
-    int keepIdle = 60 * 2;	// ÔÚsocket Ã»ÓĞ½»»¥ºó ¶à¾Ã ¿ªÊ¼·¢ËÍÕì²â°ü
-    int keepInterval = 10;	// ¶à´Î·¢ËÍÕì²â°üÖ®¼äµÄ¼ä¸ô
-    int keepCount = 5;		// Õì²â°ü¸öÊı
-
-    setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (SetsockOptType)&keepAlive, optlen);
-    if (getsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, &optlen) < 0)
-    {
-        std::cout << "getsockopt SO_KEEPALIVE failed." << std::endl;
-    }
-
-    setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&keepIdle, optlen);
-    if (getsockopt(socket, SOL_TCP, TCP_KEEPIDLE, &keepIdle, &optlen) < 0)
-    {
-        std::cout << "getsockopt TCP_KEEPIDLE failed." << std::endl;
-    }
-
-    setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&keepInterval, optlen);
-    setsockopt(socket, SOL_TCP, TCP_KEEPCNT, (void *)&keepCount, optlen);
-
-#endif
-
-    // 3.·Ç×èÈû
+    // 3.éé˜»å¡
     _sock_nonblock(socket);
 }
 
