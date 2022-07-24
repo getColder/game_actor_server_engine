@@ -48,7 +48,7 @@ bool ConnectObj::Recv() const
     char *pBuffer = nullptr;
     while (true)
     {
-        // �ܿռ����ݲ���һ��ͷ�Ĵ�С������
+        /* 总空间数据不足一个头的大小，扩容 */
         if (_recvBuffer->GetEmptySize() < (sizeof(PacketHead) + sizeof(TotalSizeType)))
         {
             _recvBuffer->ReAllocBuffer();
@@ -59,7 +59,7 @@ bool ConnectObj::Recv() const
         if (dataSize > 0)
         {
             //std::cout << "recv size:" << size << std::endl;
-            _recvBuffer->FillDate(dataSize);
+            _recvBuffer->FillDate(dataSize);   //读入数据，移动end指针
         }
         else if (dataSize == 0)
         {
@@ -69,18 +69,10 @@ bool ConnectObj::Recv() const
         else
         {
             const auto socketError = _sock_err();
-#ifndef WIN32
             if (socketError == EINTR || socketError == EWOULDBLOCK || socketError == EAGAIN)
             {
                 isRs = true;
             }
-#else
-            if (socketError == WSAEINTR || socketError == WSAEWOULDBLOCK)
-            {
-                isRs = true;
-            }
-#endif
-
             //std::cout << "recv size:" << dataSize << " error:" << socketError << std::endl;
             break;
         }
@@ -105,9 +97,10 @@ bool ConnectObj::HasSendData() const
     return _sendBuffer->HasData();
 }
 
+/* 协议数据加入用户发送缓冲区 */
 void ConnectObj::SendPacket(Packet* pPacket) const
 {
-    _sendBuffer->AddPacket(pPacket);
+    _sendBuffer->AddPacket(pPacket); //头部head + 协议版本msgid + 数据data，并拷贝到buffer
 }
 
 bool ConnectObj::Send() const
@@ -116,19 +109,20 @@ bool ConnectObj::Send() const
         char *pBuffer = nullptr;
         const int needSendSize = _sendBuffer->GetBuffer(pBuffer);
 
-        // û�����ݿɷ���
+        // 没有数据可发送
         if (needSendSize <= 0)
         {
             return true;
         }
 
         const int size = ::send(_socket, pBuffer, needSendSize, 0);
+        /* 发送成功，将数据从缓冲区种移除 */
         if (size > 0)
         {
             //std::cout << "send size:" << size << std::endl;
-            _sendBuffer->RemoveDate(size);
+            _sendBuffer->removedata(size);
 
-            // ��һ֡�ٷ���
+            // 下一帧再发送
             if (size < needSendSize)
             {
                 return true;

@@ -13,6 +13,7 @@ struct PacketHead {
 #pragma pack(pop)
 
 
+
 #define DEFAULT_PACKET_BUFFER_SIZE	1024 * 10
 
 /* 继承于基类buffer,拥有环形缓冲区并支持扩容 */

@@ -40,6 +40,7 @@ unsigned int NetworkBuffer::GetEmptySize()
 
 unsigned int NetworkBuffer::GetWriteSize() const
 {
+    /* 剩余缓冲区大小 */
     if (_beginIndex <= _endIndex)
     {
         return _bufferSize - _endIndex;
@@ -54,7 +55,7 @@ unsigned int NetworkBuffer::GetReadSize() const
 {
     if (_dataSize <= 0)
         return 0;
-
+    /* 可用缓冲区 */
     if (_beginIndex < _endIndex)
     {
         return _endIndex - _beginIndex;
@@ -67,9 +68,9 @@ unsigned int NetworkBuffer::GetReadSize() const
 
 void NetworkBuffer::FillDate(unsigned int  size)
 {
-    _dataSize += size;
+    _dataSize += size; //填充后，改变有效字节数
 
-    // 移动到头部
+      /* 填充后更新end指针 */
     if ((_bufferSize - _endIndex) <= size)
     {
         size -= _bufferSize - _endIndex;
@@ -79,16 +80,17 @@ void NetworkBuffer::FillDate(unsigned int  size)
     _endIndex += size;
 }
 
-void NetworkBuffer::RemoveDate(unsigned int size)
+void NetworkBuffer::removedata(unsigned int size)
 {
-    _dataSize -= size;
-
+    _dataSize -= size;  //移除后，改变有效字节数
+    /* 移除后更新begin指针 */
     if ((_beginIndex + size) >= _bufferSize)
-    {
-        size -= _bufferSize - _beginIndex;
+    {   
+        /* 环形    [-E..B----] */
+        size -= _bufferSize - _beginIndex;  //先尾部 Begin到边界， size减去一部分
         _beginIndex = 0;
     }
-
+    //再根据剩余的size 移动begin
     _beginIndex += size;
 }
 
@@ -117,41 +119,44 @@ int RecvNetworkBuffer::GetBuffer(char*& pBuffer) const
 
 Packet* RecvNetworkBuffer::GetPacket()
 {
-    // 数据长度不够
+    /* 数据长度不够 */
     if (_dataSize < sizeof(TotalSizeType))
     {
         return nullptr;
     }
 
-    // 1.读出 整体长度
+    /* 1.读出 整体长度 */
     unsigned short totalSize;
     MemcpyFromBuffer(reinterpret_cast<char*>(&totalSize), sizeof(TotalSizeType));
 
-    // 协议体长度不够，等待
+    /* 协议体长度不够，等待 */
     if (_dataSize < totalSize)
     {
         return nullptr;
     }
 
-    RemoveDate(sizeof(TotalSizeType));
+    removedata(sizeof(TotalSizeType));
 
-    // 2.读出 PacketHead
+    /* 2.读出 PacketHead 头部  */
     PacketHead head;
     MemcpyFromBuffer(reinterpret_cast<char*>(&head), sizeof(PacketHead));
-    RemoveDate(sizeof(PacketHead));
+    removedata(sizeof(PacketHead));
 
-    // 3.读出 协议
+    /* 3.读出 packet数据（由protobuf构成协议） */
     const auto socket = _pConnectObj->GetSocket();
+    /* 4.新建一个packet，分配空间，并绑定socket */
     Packet* pPacket = new Packet(head.MsgId, socket);
     const auto dataLength = totalSize - sizeof(PacketHead) - sizeof(TotalSizeType);
     while (pPacket->GetTotalSize() < dataLength)
     {
         pPacket->ReAllocBuffer();
     }
-
+    /* 5.拷贝协议数据  */
     MemcpyFromBuffer(pPacket->GetBuffer(), dataLength);
+    /* 6.更新buffer有效下标（endIndex） */
     pPacket->FillData(dataLength);
-    RemoveDate(dataLength);
+    /* 拷贝成功，从接收缓冲区移除数据 */
+    removedata(dataLength);
 
     return pPacket;
 }
@@ -206,9 +211,11 @@ int SendNetworkBuffer::GetBuffer(char*& pBuffer) const
     }
 }
 
+/* 添加总长度，头部信息，数据部分 */
 void SendNetworkBuffer::AddPacket(Packet* pPacket)
 {
     const auto dataLength = pPacket->GetDataLength();
+    /* 发送缓冲区，每一个tcp包： 总长度 + msgid + 数据 */
     TotalSizeType totalSize = dataLength + sizeof(PacketHead) + sizeof(TotalSizeType);
 
     // 长度不够，扩容
@@ -219,7 +226,7 @@ void SendNetworkBuffer::AddPacket(Packet* pPacket)
     //std::cout << "send buffer::Realloc. _bufferSize:" << _bufferSize << std::endl;
 
     // 1.整体长度
-    MemcpyToBuffer(reinterpret_cast<char*>(&totalSize), sizeof(TotalSizeType));
+    MemcpyToBuffer(reinterpret_cast<char*>(&totalSize), sizeof(TotalSizeType)); //逐字节放入buffer
 
     // 2.头部
     PacketHead head;

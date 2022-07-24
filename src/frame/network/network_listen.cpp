@@ -22,7 +22,7 @@ bool NetworkListen::Listen(std::string ip, int port)
     sockaddr_in addr;
     memset(&addr, 0, sizeof(sockaddr_in));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(port);   //16位端序转换
     ::inet_pton(AF_INET, ip.c_str(), &addr.sin_addr.s_addr);
 
     if (::bind(_masterSocket, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)

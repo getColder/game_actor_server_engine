@@ -56,6 +56,7 @@ unsigned short Packet::GetDataLength() const
     return _endIndex - _beginIndex;
 }
 
+
 int Packet::GetMsgId() const
 {
     return _msgId;

@@ -34,4 +34,3 @@ protected:
 
 	unsigned int _bufferSize{ 0 }; // 总长度
 };
-

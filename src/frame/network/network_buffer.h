@@ -36,7 +36,7 @@ public:
     unsigned int GetReadSize() const;
 
     void FillDate(unsigned int  size);
-    void RemoveDate(unsigned int size);
+    void removedata(unsigned int size);
     void ReAllocBuffer();
 
 protected:
