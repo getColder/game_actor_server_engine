@@ -17,7 +17,7 @@ bool MessageList::IsFollowMsgId(int msgId)
     return _callbackHandle.find(msgId) != _callbackHandle.end();
 }
 
-/* 处理packet */
+/* 处理packet，对关心的msgid执行回调 */
 void MessageList::ProcessPacket()
 {
     std::list<Packet*> tmpList;
@@ -35,7 +35,9 @@ void MessageList::ProcessPacket()
         }
         else
         {
+/* *************************************************************** */
             handleIter->second(packet);  //执行回调
+/* *************************************************************** */
         }
     }
 

@@ -103,6 +103,7 @@ void ConnectObj::SendPacket(Packet* pPacket) const
     _sendBuffer->AddPacket(pPacket); //头部head + 协议版本msgid + 数据data，并拷贝到buffer
 }
 
+/* 内核发送 */
 bool ConnectObj::Send() const
 {
     while (true) {

@@ -3,6 +3,6 @@ syntax = "proto3";
 package Proto;
 
 enum MsgId {
-	MI_None = 0; // proto3µÄÃ¶¾Ù£¬µÚÒ»¸ö±ØÎª0
+	MI_None = 0; // proto3çš„æžšä¸¾ï¼Œç¬¬ä¸€ä¸ªå¿…ä¸º0
 	MI_TestMsg = 1;
 }

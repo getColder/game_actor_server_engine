@@ -47,12 +47,12 @@ void Thread::Update()
     _thread_lock.lock();
     std::copy(_objlist.begin(), _objlist.end(), std::back_inserter(_tmpObjs));
     _thread_lock.unlock();
-
     for (ThreadObject* pTObj : _tmpObjs)
     {
-        pTObj->ProcessPacket();   //actor模型 -> 处理分发email
+/* ******************************************************************************** */        
+        pTObj->ProcessPacket();   //actor模型 -> 处理packet （解析）
         pTObj->Update();          //调用对象的update循环帧
-
+/* ******************************************************************************** */
         /* 当对象不再活跃，移除列表后处置并销毁 （互斥） */
         if (!pTObj->IsActive())
         {

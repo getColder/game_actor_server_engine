@@ -9,7 +9,7 @@ public:
     static T* Instance( Args&&... args ) {
         /* 首次使用初始化 */
         if ( m_pInstance == nullptr )
-            m_pInstance = new T( std::forward<Args>( args )... );   //完美转发： 还不太懂用处... 
+            m_pInstance = new T( std::forward<Args>( args )... );   //完美转发： 还不太懂用处... (传左值处理左值，传右值处理右值)
 
         return m_pInstance;
 

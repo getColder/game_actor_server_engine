@@ -30,7 +30,7 @@ bool NetworkListen::Listen(std::string ip, int port)
         std::cout << "::bind failed. err:" << _sock_err() << std::endl;
         return false;
     }
-
+    /* backlog = 128  */
     if (::listen(_masterSocket, SOMAXCONN) < 0)
     {
         std::cout << "::listen failed." << _sock_err() << std::endl;

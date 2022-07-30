@@ -98,6 +98,7 @@ void Network::InitEpoll()
 void Network::Epoll()
 {
     _mainSocketEventIndex = -1;
+    /* 有数据的写的fd，修改事件 */
     for (auto iter = _connects.begin(); iter != _connects.end(); ++iter)
     {
         ConnectObj* pObj = iter->second;
@@ -106,7 +107,7 @@ void Network::Epoll()
             ModifyEvent(_epfd, iter->first, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
         }
     }
-
+    /* wait后，遍历有事件发生的fd */
     int nfds = epoll_wait(_epfd, _events, MAX_EVENT, 50);
     for (int index = 0; index < nfds; index++)
     {
@@ -122,7 +123,7 @@ void Network::Epoll()
         {
             continue;
         }
-
+        /* 需要挂断socket的fd事件 */
         if (_events[index].events & EPOLLRDHUP || _events[index].events & EPOLLERR || _events[index].events & EPOLLHUP)
         {
             iter->second->Dispose();
@@ -131,7 +132,7 @@ void Network::Epoll()
             DeleteEvent(_epfd, fd);
             continue;
         }
-
+        /* 读事件fd */
         if (_events[index].events & EPOLLIN)
         {
             if (!iter->second->Recv())
@@ -143,7 +144,7 @@ void Network::Epoll()
                 continue;
             }
         }
-
+        /* 水平触发，写完移除fd写事件 */
         if (_events[index].events & EPOLLOUT)
         {
             iter->second->Send();
